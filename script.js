@@ -1,57 +1,17 @@
-const filters=document.querySelectorAll(".filter"),cards=document.querySelectorAll(".menu-card"),search=document.getElementById("search"),empty=document.getElementById("empty");let active="all";function render(){let q=search.value.toLowerCase(),shown=0;cards.forEach(c=>{let ok=(active==="all"||c.dataset.cat===active)&&c.dataset.name.includes(q);c.style.display=ok?"block":"none";if(ok)shown++});empty.style.display=shown?"none":"block"}filters.forEach(b=>b.addEventListener("click",()=>{filters.forEach(x=>x.classList.remove("active"));b.classList.add("active");active=b.dataset.filter;render()}));search.addEventListener("input",render);document.querySelector(".menu-toggle").addEventListener("click",()=>document.querySelector(".nav-links").classList.toggle("open"));document.querySelectorAll(".nav-links a").forEach(a=>a.addEventListener("click",()=>document.querySelector(".nav-links").classList.remove("open")));
+const filters=document.querySelectorAll(".filter"),cards=document.querySelectorAll(".menu-card"),search=document.getElementById("search"),empty=document.getElementById("empty");let active="all";function render(){const q=(search?.value||"").toLowerCase();let shown=0;cards.forEach(c=>{const ok=(active==="all"||c.dataset.cat===active)&&c.dataset.name.includes(q);c.style.display=ok?"block":"none";if(ok)shown++});if(empty)empty.style.display=shown?"none":"block"}filters.forEach(b=>b.addEventListener("click",()=>{filters.forEach(x=>x.classList.remove("active"));b.classList.add("active");active=b.dataset.filter;render()}));search?.addEventListener("input",render);document.querySelector(".menu-toggle")?.addEventListener("click",()=>document.querySelector(".nav-links")?.classList.toggle("open"));document.querySelectorAll(".nav-links a").forEach(a=>a.addEventListener("click",()=>document.querySelector(".nav-links")?.classList.remove("open")));
+const voiceToggle=document.getElementById("voiceToggle"),voiceLabel=document.getElementById("voiceLabel");let auto=false,timer=null,frame=null,voiceOn=false,idx=0,voices=[];const SPEED=32,IDLE=2000;function loadVoices(){voices=window.speechSynthesis?.getVoices?.()||[]}if("speechSynthesis"in window){loadVoices();speechSynthesis.onvoiceschanged=loadVoices}const clean=t=>t.replace(/\s+/g," ").trim();function nodes(){return [...document.querySelectorAll('.hero-content h1,.hero-content p:not(.eyebrow),.heading h2,.heading > p:last-child,.menu-card h3,.menu-card p,.order h2,.order p,.order-box h3,.order-box p,footer p')].filter(e=>clean(e.textContent).length>1)}function clear(){document.querySelectorAll('.karaoke-active').forEach(e=>e.classList.remove('karaoke-active'));document.querySelectorAll('.karaoke-word').forEach(e=>{const p=e.parentNode;if(p){p.replaceChild(document.createTextNode(e.textContent),e);p.normalize()}})}function word(el,start,len){const w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT),ns=[];let n;while(n=w.nextNode())ns.push(n);let p=0;for(const x of ns){let end=p+x.nodeValue.length;if(start<end&&start+len>p){let a=Math.max(0,start-p),b=Math.min(x.nodeValue.length,start+len-p),t=x.nodeValue,f=document.createDocumentFragment();if(a)f.appendChild(document.createTextNode(t.slice(0,a)));let s=document.createElement('span');s.className='karaoke-word';s.textContent=t.slice(a,b);f.appendChild(s);if(b<t.length)f.appendChild(document.createTextNode(t.slice(b)));x.parentNode.replaceChild(f,x);break}p=end}}function speak(el){if(!voiceOn||!("speechSynthesis"in window))return;let text=clean(el.textContent);speechSynthesis.cancel();clear();el.classList.add('karaoke-active');el.scrollIntoView({behavior:'smooth',block:'center'});let u=new SpeechSynthesisUtterance(text),v=voices.find(v=>/^id(-|_)/i.test(v.lang))||voices.find(v=>/indonesian|bahasa/i.test(v.name))||voices[0];if(v)u.voice=v;u.lang=v?.lang||'id-ID';u.rate=1;u.onboundary=e=>{if(e.name==='word'){document.querySelectorAll('.karaoke-word').forEach(x=>{const p=x.parentNode;if(p){p.replaceChild(document.createTextNode(x.textContent),x);p.normalize()}});word(el,e.charIndex||0,Math.max(e.charLength||1,1))}};u.onend=()=>{clear();if(auto&&voiceOn){idx=(idx+1)%nodes().length;setTimeout(()=>{if(auto)speak(nodes()[idx])},180)}};speechSynthesis.speak(u)}function loop(){if(!auto)return;let max=document.documentElement.scrollHeight-innerHeight;if(scrollY>=max-2){auto=false;cancelAnimationFrame(frame);speechSynthesis?.cancel();clear();scrollTo({top:0,behavior:'instant'});setTimeout(()=>{auto=true;if(voiceOn){idx=0;speak(nodes()[0])}frame=requestAnimationFrame(loop)},300);return}scrollBy(0,SPEED/60);frame=requestAnimationFrame(loop)}function start(){if(auto)return;let ns=nodes();if(!ns.length)return;auto=true;if(voiceOn){idx=0;speak(ns[idx])}frame=requestAnimationFrame(loop)}function reset(){auto=false;cancelAnimationFrame(frame);speechSynthesis?.cancel();clear();clearTimeout(timer);timer=setTimeout(start,IDLE)}voiceToggle?.addEventListener('click',e=>{e.stopPropagation();voiceOn=!voiceOn;voiceToggle.classList.toggle('active',voiceOn);voiceLabel.textContent=voiceOn?'Suara Aktif':'Aktifkan Suara';reset()});['pointerdown','wheel','touchstart','keydown'].forEach(t=>document.addEventListener(t,reset,{passive:true}));timer=setTimeout(start,IDLE);
 
-// Auto-scroll: starts after 2 seconds without user activity.
-// Any mouse, touch, wheel, keyboard, or click activity pauses/resets the timer.
-(function initAutoScroll(){
-  const IDLE_DELAY = 2000;
-  const SCROLL_STEP = 0.7; // smaller = slower scrolling
-  const FRAME_DELAY = 20;
-  let idleTimer = null;
-  let autoScrolling = false;
-  let lastFrame = 0;
+/* 🍜 Bakmi cursor trail: every movement leaves a bowl-shaped trail that fades away. */
+let lastCursorTrail = 0;
+document.addEventListener('mousemove', (e) => {
+  const now = performance.now();
+  if (now - lastCursorTrail < 45) return;
+  lastCursorTrail = now;
 
-  function stopAutoScroll(){
-    autoScrolling = false;
-    clearTimeout(idleTimer);
-  }
-
-  function startTimer(){
-    stopAutoScroll();
-    idleTimer = setTimeout(() => {
-      autoScrolling = true;
-      lastFrame = performance.now();
-      requestAnimationFrame(autoScroll);
-    }, IDLE_DELAY);
-  }
-
-  function autoScroll(now){
-    if(!autoScrolling) return;
-
-    // Scroll gently downward.
-    if(now - lastFrame >= FRAME_DELAY){
-      window.scrollBy(0, SCROLL_STEP);
-      lastFrame = now;
-    }
-
-    const atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2;
-    if(atBottom){
-      // Quickly return to the top, then immediately continue the slow cycle.
-      window.scrollTo({top: 0, behavior: 'smooth'});
-      setTimeout(() => {
-        if(autoScrolling){
-          lastFrame = performance.now();
-          requestAnimationFrame(autoScroll);
-        }
-      }, 450);
-      return;
-    }
-
-    requestAnimationFrame(autoScroll);
-  }
-
-  ['mousemove','wheel','touchstart','touchmove','keydown','click','pointerdown'].forEach(eventName => {
-    window.addEventListener(eventName, startTimer, {passive: true});
-  });
-
-  startTimer();
-})();
+  const trail = document.createElement('div');
+  trail.className = 'cursor-trail';
+  trail.style.left = e.clientX + 'px';
+  trail.style.top = e.clientY + 'px';
+  document.body.appendChild(trail);
+  setTimeout(() => trail.remove(), 800);
+}, { passive: true });
