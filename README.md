@@ -1,2 +1,2 @@
 # bakmimulia
-ini website tentang makanan merat buat isi perut kamuu !!!
+makan ke bakmi aku aja yuukk
