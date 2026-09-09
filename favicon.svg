@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#8a1424"/><stop offset="1" stop-color="#3d070e"/></linearGradient><filter id="s"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-opacity=".35"/></filter></defs>
+<rect width="512" height="512" rx="112" fill="#0b0909"/>
+<rect x="18" y="18" width="476" height="476" rx="98" fill="url(#g)" stroke="#d4af37" stroke-width="12"/>
+<g filter="url(#s)" stroke="#d4af37" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+<path fill="none" d="M218 116c-12-25 15-35 2-61M268 116c-12-25 15-35 2-61M318 116c-12-25 15-35 2-61"/>
+<path fill="#d4af37" d="M153 154c0-17 14-31 31-31h144c17 0 31 14 31 31v17H153z"/>
+<path fill="#d4af37" d="M102 190h308l-24 118c-9 45-49 77-95 77H221c-46 0-86-32-95-77z"/>
+<ellipse cx="256" cy="205" rx="139" ry="38" fill="#7b101e"/>
+<path fill="none" d="M145 202c25 20 46-17 70 3s45-18 69 1 44-17 78 0"/>
+<path fill="none" d="M173 177c20 14 36 16 53 0M234 177c20 14 36 16 53 0M295 177c18 13 33 14 48 1"/>
+<path fill="#0b0909" stroke="#d4af37" d="M188 385h136l-17 42H205z"/>
+<path fill="#d4af37" d="M242 247h28v72h-28z"/>
+<circle cx="256" cy="280" r="18" fill="#8a1424"/>
+</g>
+<text x="256" y="468" text-anchor="middle" font-family="Georgia,serif" font-size="28" font-weight="700" fill="#f6d56b" letter-spacing="4">MULIA</text>
+</svg>
