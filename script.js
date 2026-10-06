@@ -15,3 +15,38 @@ document.addEventListener('mousemove', (e) => {
   document.body.appendChild(trail);
   setTimeout(() => trail.remove(), 800);
 }, { passive: true });
+
+/* ===== Dokumentasi Pembeli lightbox: added feature only ===== */
+(() => {
+  const items = [...document.querySelectorAll(".docs-photo")];
+  const box = document.getElementById("docsLightbox");
+  const image = document.getElementById("docsLightboxImage");
+  const close = document.querySelector(".docs-close");
+  const prev = document.querySelector(".docs-prev");
+  const next = document.querySelector(".docs-next");
+  if (!items.length || !box || !image) return;
+  let current = 0;
+  const show = i => {
+    current = (i + items.length) % items.length;
+    image.src = items[current].dataset.full;
+    image.alt = items[current].querySelector("img")?.alt || "Dokumentasi Bakmi Mulia";
+    box.classList.add("open");
+    box.setAttribute("aria-hidden","false");
+  };
+  const hide = () => {
+    box.classList.remove("open");
+    box.setAttribute("aria-hidden","true");
+    image.src = "";
+  };
+  items.forEach((item,i)=>item.addEventListener("click",()=>show(i)));
+  close?.addEventListener("click",hide);
+  prev?.addEventListener("click",()=>show(current-1));
+  next?.addEventListener("click",()=>show(current+1));
+  box.addEventListener("click",e=>{if(e.target===box)hide()});
+  document.addEventListener("keydown",e=>{
+    if(!box.classList.contains("open")) return;
+    if(e.key==="Escape") hide();
+    if(e.key==="ArrowLeft") show(current-1);
+    if(e.key==="ArrowRight") show(current+1);
+  });
+})();
