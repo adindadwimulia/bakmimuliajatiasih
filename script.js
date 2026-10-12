@@ -50,3 +50,34 @@ document.addEventListener('mousemove', (e) => {
     if(e.key==="ArrowRight") show(current+1);
   });
 })();
+
+
+/* ===== Bakmi Mulia order cart upgrade ===== */
+(() => {
+  // Paste the deployed Apps Script Web App URL here after deployment. Leave blank for WhatsApp fallback.
+  const APPS_SCRIPT_URL = '';
+  const WA_NUMBER = '6289604345314';
+  const cart = new Map();
+  const rupiah = n => new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(n).replace(/\u00a0/g,' ');
+  const cards = [...document.querySelectorAll('.menu-card')];
+  const countEl = document.getElementById('cartCount');
+  const itemsEl = document.getElementById('cartItems');
+  const totalEl = document.getElementById('cartTotal');
+  const checkoutBtn = document.getElementById('checkoutOpen');
+  const modal = document.getElementById('checkoutModal');
+  const form = document.getElementById('checkoutForm');
+  const msg = document.getElementById('checkoutMessage');
+  if(!cards.length || !itemsEl || !form) return;
+  function priceFrom(card){const s=card.querySelector('strong')?.textContent||'';const digits=s.replace(/[^0-9]/g,'');return Number(digits)||0;}
+  function info(card){return {name:card.querySelector('h3')?.textContent.trim()||'Menu',price:priceFrom(card)};}
+  cards.forEach((card,i)=>{const b=document.createElement('button');b.type='button';b.className='add-cart';b.textContent='+ Tambah ke keranjang';b.addEventListener('click',()=>{const d=info(card);const key=d.name+'|'+d.price;const old=cart.get(key)||{...d,key,qty:0};old.qty++;cart.set(key,old);render();});card.appendChild(b);});
+  function render(){let count=0,total=0;cart.forEach(x=>{count+=x.qty;total+=x.qty*x.price});if(countEl)countEl.textContent=count;if(totalEl)totalEl.textContent=rupiah(total);if(checkoutBtn)checkoutBtn.disabled=count===0;if(!cart.size){itemsEl.innerHTML='<p class="cart-empty">Keranjang kamu masih kosong. Tambahkan menu dari kartu menu, ya!</p>';return;}itemsEl.innerHTML='';cart.forEach(x=>{const row=document.createElement('div');row.className='cart-row';const left=document.createElement('div');const title=document.createElement('strong');title.textContent=x.name;const price=document.createElement('small');price.textContent=rupiah(x.price)+' / porsi';left.append(title,price);const right=document.createElement('div');right.style.textAlign='right';const sub=document.createElement('strong');sub.textContent=rupiah(x.price*x.qty);const controls=document.createElement('div');controls.className='cart-controls';[['−',-1],[''+x.qty,0],['+',1]].forEach(([label,delta])=>{const b=document.createElement('button');b.type='button';b.textContent=label;if(delta!==0)b.addEventListener('click',()=>{x.qty+=delta;if(x.qty<=0)cart.delete(x.key);render();});controls.appendChild(b);});const rm=document.createElement('button');rm.type='button';rm.className='cart-remove';rm.textContent='Hapus';rm.addEventListener('click',()=>{cart.delete(x.key);render();});controls.appendChild(rm);right.append(sub,controls);row.append(left,right);itemsEl.appendChild(row);});}
+  function openModal(){if(!cart.size)return;modal.classList.add('open');modal.setAttribute('aria-hidden','false');msg.textContent='';}
+  function closeModal(){modal.classList.remove('open');modal.setAttribute('aria-hidden','true');}
+  checkoutBtn?.addEventListener('click',openModal);document.getElementById('checkoutClose')?.addEventListener('click',closeModal);modal.addEventListener('click',e=>{if(e.target===modal)closeModal();});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+  form.addEventListener('submit',async e=>{e.preventDefault();if(!cart.size)return;const fd=new FormData(form);const order={orderId:'BM-'+Date.now().toString(36).toUpperCase(),createdAt:new Date().toISOString(),customerName:String(fd.get('customerName')||'').trim(),phone:String(fd.get('phone')||'').trim(),orderType:String(fd.get('orderType')||'Takeaway'),notes:String(fd.get('notes')||'').trim(),items:[...cart.values()].map(x=>({name:x.name,price:x.price,qty:x.qty,subtotal:x.price*x.qty})),total:[...cart.values()].reduce((s,x)=>s+x.price*x.qty,0)};if(!order.customerName||!order.phone){msg.textContent='Mohon isi nama dan nomor WhatsApp.';return;}const text='Halo Bakmi Mulia, saya ingin memesan:%5Cn'+encodeURIComponent(order.items.map(x=>`${x.name} x${x.qty} — ${rupiah(x.subtotal)}`).join('\n'))+'%5CnTotal: '+encodeURIComponent(rupiah(order.total))+'%5CnNama: '+encodeURIComponent(order.customerName)+'%5CnWhatsApp: '+encodeURIComponent(order.phone)+'%5CnJenis: '+encodeURIComponent(order.orderType)+'%5CnCatatan: '+encodeURIComponent(order.notes)+'%5CnID: '+encodeURIComponent(order.orderId);
+    if(APPS_SCRIPT_URL){try{msg.textContent='Mengirim pesanan…';const res=await fetch(APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(order)});const data=await res.json();if(!data.ok)throw new Error(data.message||'Gagal menyimpan');msg.textContent='Pesanan tersimpan dengan nomor '+order.orderId+'. WhatsApp akan dibuka untuk konfirmasi.';}catch(err){msg.textContent='Belum berhasil menyimpan ke database. WhatsApp akan dibuka agar pesanan tidak hilang.';}}else{msg.textContent='URL Apps Script belum dipasang. Detail pesanan akan dibuka di WhatsApp.';}
+    window.open('https://wa.me/'+WA_NUMBER+'?text='+text,'_blank','noopener');
+  });
+  render();
+})();
