@@ -82,15 +82,20 @@ function doPost(e) {
 function handleRequest_(e, body) {
   try {
     const params = (e && e.parameter) || {};
-    const action = (body && body.action) || params.action || 'ping';
+    // Tentukan action: body.action > query > jika ada orderId tanpa action = createOrder
+    var action = (body && body.action) || params.action || '';
+    if (!action) {
+      if (body && body.orderId) action = 'createOrder';
+      else action = 'ping';
+    }
 
     // ---- Public ----
     if (action === 'ping' || action === 'health') {
       return json_({ ok: true, service: 'Bakmi Mulia API', message: 'Backend aktif.' });
     }
-    if (action === 'createOrder' || (!body?.action && body?.orderId)) {
-      // Kompatibel dengan frontend lama yang kirim objek order langsung
-      const order = body.action ? body.order : body;
+    if (action === 'createOrder') {
+      // Kompatibel: body bisa objek order langsung, atau {action, order}
+      const order = (body && body.order) ? body.order : body;
       return createOrder_(order);
     }
 
