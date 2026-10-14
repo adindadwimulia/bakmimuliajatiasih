@@ -55,7 +55,7 @@ document.addEventListener('mousemove', (e) => {
 /* ===== Bakmi Mulia order cart upgrade ===== */
 (() => {
   // Paste the deployed Apps Script Web App URL here after deployment. Leave blank for WhatsApp fallback.
-  const APPS_SCRIPT_URL = '';
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxzUoxeV7m6f-5h4viYH5YyumfNgLmvcRk_D3XG0dK4cSa_AI9KbNyOy3aImC6j5M5t/exec';
   window.__BAKMI_API_URL = APPS_SCRIPT_URL;
   const WA_NUMBER = '6289604345314';
   const cart = new Map();
