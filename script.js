@@ -77,7 +77,7 @@ document.addEventListener('mousemove', (e) => {
   function closeModal(){modal.classList.remove('open');modal.setAttribute('aria-hidden','true');}
   checkoutBtn?.addEventListener('click',openModal);document.getElementById('checkoutClose')?.addEventListener('click',closeModal);modal.addEventListener('click',e=>{if(e.target===modal)closeModal();});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
   form.addEventListener('submit',async e=>{e.preventDefault();if(!cart.size)return;const fd=new FormData(form);const order={orderId:'BM-'+Date.now().toString(36).toUpperCase(),createdAt:new Date().toISOString(),customerName:String(fd.get('customerName')||'').trim(),phone:String(fd.get('phone')||'').trim(),orderType:String(fd.get('orderType')||'Takeaway'),notes:String(fd.get('notes')||'').trim(),items:[...cart.values()].map(x=>({name:x.name,price:x.price,qty:x.qty,subtotal:x.price*x.qty})),total:[...cart.values()].reduce((s,x)=>s+x.price*x.qty,0)};if(!order.customerName||!order.phone){msg.textContent='Mohon isi nama dan nomor WhatsApp.';return;}const text='Halo Bakmi Mulia, saya ingin memesan:%5Cn'+encodeURIComponent(order.items.map(x=>`${x.name} x${x.qty} — ${rupiah(x.subtotal)}`).join('\n'))+'%5CnTotal: '+encodeURIComponent(rupiah(order.total))+'%5CnNama: '+encodeURIComponent(order.customerName)+'%5CnWhatsApp: '+encodeURIComponent(order.phone)+'%5CnJenis: '+encodeURIComponent(order.orderType)+'%5CnCatatan: '+encodeURIComponent(order.notes)+'%5CnID: '+encodeURIComponent(order.orderId);
-    if(APPS_SCRIPT_URL){try{msg.textContent='Mengirim pesanan…';const res=await fetch(APPS_SCRIPT_URL,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({action:'createOrder'},order))});const data=await res.json();if(!data.ok)throw new Error(data.message||'Gagal menyimpan');msg.textContent='Pesanan tersimpan dengan nomor '+order.orderId+'. WhatsApp akan dibuka untuk konfirmasi.';}catch(err){console.error('Order save error',err);msg.textContent='Belum berhasil menyimpan ke database ('+(err&&err.message?err.message:'error')+'). WhatsApp akan dibuka agar pesanan tidak hilang.';}}else{msg.textContent='URL Apps Script belum dipasang. Detail pesanan akan dibuka di WhatsApp.';}
+    if(APPS_SCRIPT_URL){try{msg.textContent='Mengirim pesanan…';const payload=JSON.stringify(Object.assign({action:'createOrder'},order));let saved=false;try{const res=await fetch(APPS_SCRIPT_URL,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:payload});const text=await res.text();const data=JSON.parse(text);if(data&&data.ok){saved=true;msg.textContent='Pesanan tersimpan dengan nomor '+order.orderId+'. WhatsApp akan dibuka untuk konfirmasi.';}else{throw new Error((data&&data.message)||'Gagal menyimpan');}}catch(err1){console.warn('CORS/parse fallback, kirim no-cors',err1);try{await fetch(APPS_SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:payload});saved=true;msg.textContent='Pesanan dikirim (no-cors). Cek Google Sheet. WhatsApp akan dibuka.';}catch(err2){console.error(err2);msg.textContent='Belum berhasil menyimpan ke database. WhatsApp akan dibuka agar pesanan tidak hilang.';}}}catch(err){console.error('Order save error',err);msg.textContent='Belum berhasil menyimpan ke database. WhatsApp akan dibuka agar pesanan tidak hilang.';}}else{msg.textContent='URL Apps Script belum dipasang. Detail pesanan akan dibuka di WhatsApp.';}
     window.open('https://wa.me/'+WA_NUMBER+'?text='+text,'_blank','noopener');
   });
   render();
@@ -109,34 +109,19 @@ document.addEventListener('mousemove', (e) => {
   const detailModal = document.getElementById('adminDetailModal');
   const loginForm = document.getElementById('adminLoginForm');
   const loginMsg = document.getElementById('adminLoginMsg');
-  const brand = document.querySelector('.brand');
 
-  if (!loginModal || !panel || !brand) return;
+  if (!loginModal || !panel) return;
 
-  // ---- Logo 4-click (jendela 2.5 detik, prevent navigasi selama rangkaian) ----
-  let clickCount = 0;
-  let clickTimer = null;
-  function onBrandActivate(e) {
-    clickCount++;
-    clearTimeout(clickTimer);
-    clickTimer = setTimeout(() => { clickCount = 0; }, 2500);
-    if (clickCount >= 4) {
+  // ---- Admin access: Ctrl + Alt + Shift + klik di mana saja ----
+  document.addEventListener('click', (e) => {
+    if (e.ctrlKey && e.altKey && e.shiftKey) {
       e.preventDefault();
       e.stopPropagation();
-      clickCount = 0;
       openLogin();
-    } else if (clickCount > 1) {
-      // cegah loncat ke #home di tengah rangkaian klik
-      e.preventDefault();
     }
-  }
-  brand.addEventListener('click', onBrandActivate);
-  // Tangkap juga klik pada child (span MULIA)
-  brand.querySelectorAll('*').forEach(el => {
-    el.addEventListener('click', (e) => { /* bubble ke brand */ });
-  });
+  }, true);
 
-  function openLogin() {
+    function openLogin() {
     const token = sessionStorage.getItem(TOKEN_KEY);
     if (token) {
       openPanel();

@@ -18,7 +18,7 @@ FITUR BARU DI UPGRADE INI
    - Password admin & Spreadsheet ID disimpan di Script Properties
      (TIDAK pernah ada di file GitHub Pages)
 2. Panel Admin:
-   - Klik logo "BAKMI MULIA" di navbar EMPAT KALI berturut-turut
+   - Tekan Ctrl+Alt+Shift lalu klik di mana saja di layar (buka form login admin)
    - Password default: Bismillaah
    - Dashboard: statistik, daftar pesanan, filter & cari
    - CRUD pesanan: lihat detail, ubah status/nama/telepon/catatan, hapus
@@ -55,7 +55,7 @@ B. Hubungkan ke website
 
 C. Uji
    - Pesan 1 item dari website → cek sheet Orders & OrderItems terisi.
-   - Klik logo 4x → login dengan password Bismillaah → lihat dashboard.
+   - Ctrl+Alt+Shift + klik di layar → login dengan password Bismillaah → dashboard.
 
 
 MENGUBAH PASSWORD ADMIN
@@ -97,3 +97,26 @@ CATATAN
 - Untuk produksi lebih ketat, batasi akses Web App dan/atau validasi harga
   server-side dari database menu (saat ini harga diambil dari HTML).
 - Nomor WhatsApp fallback ada di konstanta WA_NUMBER di script.js.
+
+
+TROUBLESHOOTING: DATA TIDAK MASUK SHEET
+---------------------------------------
+1. Pastikan Code.gs TERBARU sudah di-Deploy ulang (Manage deployments → Edit → New version).
+2. Pastikan setupOnce() sudah dijalankan dari editor (sekali saja).
+   - Buka spreadsheet yang BENAR (yang di-bind ke project Apps Script).
+   - Extensions → Apps Script → Run setupOnce.
+3. Authorization / izin:
+   - Saat pertama Run setupOnce atau Deploy, Google minta izin.
+   - Klik "Advanced" / "Lanjutan" → "Go to ... (unsafe)" jika muncul peringatan.
+   - Centang / izinkan akses ke Google Spreadsheet.
+   - Tidak harus "select all" untuk semua Google services — yang wajib:
+     • See, edit, create and delete your Google Sheets spreadsheets
+     • Connect to an external service (jika ada)
+   - Jika ragu, di Apps Script: Run setupOnce lagi dan authorize ulang.
+4. Cek URL di script.js sama dengan URL deployment aktif (/exec).
+5. Setelah upload ke GitHub Pages, hard-refresh browser (Ctrl+Shift+R).
+6. Tes: pesan 1 item, lalu buka sheet "Orders". Jika baris baru muncul, sukses.
+
+CATATAN: Dari server, createOrder sudah terbukti OK (mengembalikan {"ok":true,"orderId":"..."}).
+Jika frontend masih gagal, biasanya karena file script.js di hosting belum versi terbaru
+atau browser masih cache file lama.
