@@ -220,3 +220,15 @@ a, button, input, textarea, select { cursor: url('cursor.png') 32 32, pointer; }
 .admin-detail-total{margin:10px 0 16px;font-size:15px}
 .admin-detail-total strong{color:var(--g)}
 .admin-detail-actions{display:flex;flex-wrap:wrap;gap:10px}
+
+
+/* Tombol Admin di header */
+.nav-admin-btn{
+  background:transparent;border:1px solid #d4af3766;color:#d4af37;
+  font:500 10px Poppins,sans-serif;text-transform:uppercase;letter-spacing:.15em;
+  padding:6px 12px;border-radius:6px;cursor:pointer;transition:.2s;
+}
+.nav-admin-btn:hover{background:var(--b);border-color:var(--g);color:#fff}
+@media(max-width:800px){
+  .nav-admin-btn{margin:8px 0;width:100%;text-align:left;padding:10px 14px}
+}

@@ -121,6 +121,13 @@ document.addEventListener('mousemove', (e) => {
     }
   }, true);
 
+  // Tombol Admin di header
+  document.getElementById('adminEntryBtn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    openLogin();
+  });
+
+
     function openLogin() {
     const token = sessionStorage.getItem(TOKEN_KEY);
     if (token) {
