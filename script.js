@@ -56,6 +56,7 @@ document.addEventListener('mousemove', (e) => {
 (() => {
   // Paste the deployed Apps Script Web App URL here after deployment. Leave blank for WhatsApp fallback.
   const APPS_SCRIPT_URL = '';
+  window.__BAKMI_API_URL = APPS_SCRIPT_URL;
   const WA_NUMBER = '6289604345314';
   const cart = new Map();
   const rupiah = n => new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(n).replace(/\u00a0/g,' ');
@@ -80,4 +81,291 @@ document.addEventListener('mousemove', (e) => {
     window.open('https://wa.me/'+WA_NUMBER+'?text='+text,'_blank','noopener');
   });
   render();
+})();
+
+
+/* ===== Admin Panel: logo 4x click + CRUD ===== */
+(() => {
+  const APPS_SCRIPT_URL = (typeof window.__BM_APPS_URL === 'string' ? window.__BM_APPS_URL : null)
+    || document.querySelector('script[data-apps-url]')?.dataset.appsUrl
+    || '';
+  // Re-use the same URL constant from cart block if present in scope — fallback to reading from a data attribute or empty.
+  // We look up the URL the same way the cart does: hardcode companion is set below via shared getter.
+  function getApiUrl() {
+    // Prefer the cart module's URL if it was assigned on window
+    if (window.__BAKMI_API_URL) return window.__BAKMI_API_URL;
+    // Fallback: try to parse from existing cart IIFE constant by checking a meta tag
+    const meta = document.querySelector('meta[name="apps-script-url"]');
+    if (meta && meta.content) return meta.content.trim();
+    return window.__BAKMI_API_URL || '';
+  }
+
+  // Will be set by cart block after we patch it
+  const TOKEN_KEY = 'bm_admin_token';
+  let apiUrl = '';
+
+  const loginModal = document.getElementById('adminLoginModal');
+  const panel = document.getElementById('adminPanel');
+  const detailModal = document.getElementById('adminDetailModal');
+  const loginForm = document.getElementById('adminLoginForm');
+  const loginMsg = document.getElementById('adminLoginMsg');
+  const brand = document.querySelector('.brand');
+
+  if (!loginModal || !panel || !brand) return;
+
+  // ---- Logo 4-click ----
+  let clickCount = 0;
+  let clickTimer = null;
+  brand.addEventListener('click', (e) => {
+    // Allow normal navigation on single click; only intercept pattern of 4 rapid clicks
+    clickCount++;
+    clearTimeout(clickTimer);
+    clickTimer = setTimeout(() => { clickCount = 0; }, 900);
+    if (clickCount >= 4) {
+      e.preventDefault();
+      clickCount = 0;
+      openLogin();
+    }
+  });
+
+  function openLogin() {
+    const token = sessionStorage.getItem(TOKEN_KEY);
+    if (token) {
+      openPanel();
+      return;
+    }
+    loginModal.classList.add('open');
+    loginModal.setAttribute('aria-hidden', 'false');
+    loginMsg.textContent = '';
+    loginMsg.classList.remove('error');
+    setTimeout(() => document.getElementById('adminPassword')?.focus(), 100);
+  }
+  function closeLogin() {
+    loginModal.classList.remove('open');
+    loginModal.setAttribute('aria-hidden', 'true');
+  }
+  document.getElementById('adminLoginClose')?.addEventListener('click', closeLogin);
+  loginModal.addEventListener('click', (e) => { if (e.target === loginModal) closeLogin(); });
+
+  async function api(body) {
+    const url = window.__BAKMI_API_URL || '';
+    if (!url) throw new Error('URL Apps Script belum dipasang di script.js (APPS_SCRIPT_URL).');
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.message || 'Gagal');
+    return data;
+  }
+
+  loginForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const password = document.getElementById('adminPassword')?.value || '';
+    loginMsg.textContent = 'Memverifikasi…';
+    loginMsg.classList.remove('error');
+    try {
+      const data = await api({ action: 'adminLogin', password });
+      sessionStorage.setItem(TOKEN_KEY, data.token);
+      closeLogin();
+      openPanel();
+    } catch (err) {
+      loginMsg.textContent = err.message || 'Login gagal';
+      loginMsg.classList.add('error');
+    }
+  });
+
+  function token() { return sessionStorage.getItem(TOKEN_KEY) || ''; }
+
+  function openPanel() {
+    panel.classList.add('open');
+    panel.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    refreshAll();
+  }
+  function closePanel() {
+    panel.classList.remove('open');
+    panel.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  document.getElementById('adminLogout')?.addEventListener('click', async () => {
+    try { await api({ action: 'adminLogout', token: token() }); } catch (_) {}
+    sessionStorage.removeItem(TOKEN_KEY);
+    closePanel();
+  });
+  document.getElementById('adminRefresh')?.addEventListener('click', refreshAll);
+
+  const rupiah = n => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 })
+    .format(Number(n) || 0).replace(/\u00a0/g, ' ');
+
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    try {
+      const d = new Date(iso);
+      return d.toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' });
+    } catch { return String(iso); }
+  }
+
+  async function refreshAll() {
+    await Promise.all([loadStats(), loadOrders()]);
+  }
+
+  async function loadStats() {
+    try {
+      const data = await api({ action: 'stats', token: token() });
+      const s = data.stats || {};
+      document.getElementById('statTotal').textContent = s.total ?? 0;
+      document.getElementById('statMenunggu').textContent = s.Menunggu ?? 0;
+      document.getElementById('statDiproses').textContent = (s.Diproses ?? 0) + (s.Dikonfirmasi ?? 0);
+      document.getElementById('statSelesai').textContent = s.Selesai ?? 0;
+      document.getElementById('statRevenue').textContent = rupiah(data.revenue);
+    } catch (err) {
+      if (/sesi|login|password/i.test(err.message)) {
+        sessionStorage.removeItem(TOKEN_KEY);
+        closePanel();
+        openLogin();
+      }
+    }
+  }
+
+  async function loadOrders() {
+    const body = document.getElementById('adminOrdersBody');
+    if (!body) return;
+    body.innerHTML = '<tr><td colspan="8" class="admin-empty">Memuat…</td></tr>';
+    try {
+      const q = document.getElementById('adminSearch')?.value || '';
+      const status = document.getElementById('adminStatusFilter')?.value || '';
+      const data = await api({ action: 'listOrders', token: token(), q, status, limit: 200 });
+      const orders = data.orders || [];
+      if (!orders.length) {
+        body.innerHTML = '<tr><td colspan="8" class="admin-empty">Belum ada pesanan.</td></tr>';
+        return;
+      }
+      body.innerHTML = '';
+      orders.forEach(o => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><code>${esc(o.OrderID)}</code></td>
+          <td>${esc(fmtDate(o.CreatedAt))}</td>
+          <td>${esc(o.CustomerName)}</td>
+          <td>${esc(o.Phone)}</td>
+          <td>${esc(o.OrderType)}</td>
+          <td>${esc(rupiah(o.Total))}</td>
+          <td><span class="admin-status-pill ${esc(o.Status)}">${esc(o.Status)}</span></td>
+          <td class="admin-row-actions">
+            <button type="button" data-id="${esc(o.OrderID)}" class="btn-detail">Detail / Edit</button>
+          </td>`;
+        body.appendChild(tr);
+      });
+      body.querySelectorAll('.btn-detail').forEach(btn => {
+        btn.addEventListener('click', () => openDetail(btn.dataset.id));
+      });
+    } catch (err) {
+      body.innerHTML = `<tr><td colspan="8" class="admin-empty">${esc(err.message)}</td></tr>`;
+      if (/sesi|login/i.test(err.message)) {
+        sessionStorage.removeItem(TOKEN_KEY);
+        closePanel();
+        openLogin();
+      }
+    }
+  }
+
+  function esc(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+
+  let searchTimer;
+  document.getElementById('adminSearch')?.addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(loadOrders, 350);
+  });
+  document.getElementById('adminStatusFilter')?.addEventListener('change', loadOrders);
+
+  // ---- Detail / Edit ----
+  async function openDetail(orderId) {
+    const msg = document.getElementById('adminDetailMsg');
+    msg.textContent = 'Memuat…';
+    msg.classList.remove('error');
+    detailModal.classList.add('open');
+    detailModal.setAttribute('aria-hidden', 'false');
+    try {
+      const data = await api({ action: 'getOrder', token: token(), orderId });
+      const o = data.order;
+      document.getElementById('adminDetailTitle').textContent = o.OrderID;
+      document.getElementById('detailOrderId').value = o.OrderID;
+      document.getElementById('detailName').value = o.CustomerName || '';
+      document.getElementById('detailPhone').value = o.Phone || '';
+      document.getElementById('detailType').value = o.OrderType || 'Takeaway';
+      document.getElementById('detailStatus').value = o.Status || 'Menunggu';
+      document.getElementById('detailNotes').value = o.Notes || '';
+      document.getElementById('detailTotal').textContent = rupiah(o.Total);
+      const itemsEl = document.getElementById('detailItems');
+      itemsEl.innerHTML = (o.items || []).map(it =>
+        `<div class="item-row"><span>${esc(it.MenuName)} × ${esc(it.Quantity)}</span><span>${esc(rupiah(it.Subtotal))}</span></div>`
+      ).join('') || '<div class="item-row">Tidak ada item</div>';
+      msg.textContent = '';
+    } catch (err) {
+      msg.textContent = err.message;
+      msg.classList.add('error');
+    }
+  }
+
+  function closeDetail() {
+    detailModal.classList.remove('open');
+    detailModal.setAttribute('aria-hidden', 'true');
+  }
+  document.getElementById('adminDetailClose')?.addEventListener('click', closeDetail);
+  detailModal?.addEventListener('click', (e) => { if (e.target === detailModal) closeDetail(); });
+
+  document.getElementById('adminDetailForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('adminDetailMsg');
+    msg.textContent = 'Menyimpan…';
+    msg.classList.remove('error');
+    try {
+      await api({
+        action: 'updateOrder',
+        token: token(),
+        orderId: document.getElementById('detailOrderId').value,
+        customerName: document.getElementById('detailName').value,
+        phone: document.getElementById('detailPhone').value,
+        orderType: document.getElementById('detailType').value,
+        status: document.getElementById('detailStatus').value,
+        notes: document.getElementById('detailNotes').value
+      });
+      msg.textContent = 'Perubahan disimpan.';
+      loadOrders();
+      loadStats();
+    } catch (err) {
+      msg.textContent = err.message;
+      msg.classList.add('error');
+    }
+  });
+
+  document.getElementById('adminDeleteOrder')?.addEventListener('click', async () => {
+    const orderId = document.getElementById('detailOrderId').value;
+    if (!orderId) return;
+    if (!confirm('Hapus pesanan ' + orderId + ' secara permanen?')) return;
+    const msg = document.getElementById('adminDetailMsg');
+    try {
+      await api({ action: 'deleteOrder', token: token(), orderId });
+      closeDetail();
+      loadOrders();
+      loadStats();
+    } catch (err) {
+      msg.textContent = err.message;
+      msg.classList.add('error');
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (detailModal?.classList.contains('open')) closeDetail();
+      else if (loginModal?.classList.contains('open')) closeLogin();
+    }
+  });
 })();

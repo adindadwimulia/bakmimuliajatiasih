@@ -49,4 +49,121 @@
   <button class="docs-next" type="button" aria-label="Foto berikutnya">›</button>
 </div>
 <section class="delivery-order" id="order"><div class="delivery-inner"><div class="delivery-copy"><p class="eyebrow">ORDER NOW</p><h2>AYO ORDER!</h2><p>Nikmati kelezatan Bakmi Mulia kapan saja dan di mana saja.</p><p class="delivery-sub">Bisa dipesan lewat:</p></div><div class="delivery-links"><a class="delivery-card grab" href="#" aria-label="Pesan lewat GrabFood"><strong>GrabFood</strong><span>Pesan sekarang →</span></a><a class="delivery-card gofood" href="#" aria-label="Pesan lewat GoFood"><strong>gofood</strong><span>Pesan sekarang →</span></a><a class="delivery-card shopee" href="#" aria-label="Pesan lewat ShopeeFood"><strong>ShopeeFood</strong><span>Pesan sekarang →</span></a></div></div></section>
-<footer><b>BAKMI <span>MULIA</span></b><p>Warm bowl. Bold flavor. Beautiful moments.</p><div class="footer-address"><span>📍</span> Bekasi, Jatiasih, Kemang IFI Graha F8 No 9</div><small>© 2026 Bakmi Mulia</small></footer><script src="script.js"></script></body></html>
+<footer><b>BAKMI <span>MULIA</span></b><p>Warm bowl. Bold flavor. Beautiful moments.</p><div class="footer-address"><span>📍</span> Bekasi, Jatiasih, Kemang IFI Graha F8 No 9</div><small>© 2026 Bakmi Mulia</small></footer><script src="script.js"></script>
+<!-- ===== ADMIN PANEL (hidden until logo clicked 4x) ===== -->
+<div id="adminLoginModal" class="admin-modal" aria-hidden="true">
+  <div class="admin-card" role="dialog" aria-labelledby="adminLoginTitle" aria-modal="true">
+    <button type="button" class="admin-close" id="adminLoginClose" aria-label="Tutup">×</button>
+    <p class="eyebrow">BAKMI MULIA</p>
+    <h2 id="adminLoginTitle">Panel <em>Admin</em></h2>
+    <form id="adminLoginForm">
+      <label>Password admin
+        <input type="password" name="password" id="adminPassword" autocomplete="current-password" required maxlength="64" placeholder="••••••••">
+      </label>
+      <button class="btn" type="submit">Masuk</button>
+      <p id="adminLoginMsg" class="admin-msg" role="status"></p>
+    </form>
+  </div>
+</div>
+
+<div id="adminPanel" class="admin-panel" aria-hidden="true">
+  <div class="admin-panel-inner">
+    <header class="admin-header">
+      <div>
+        <p class="eyebrow">BAKMI MULIA</p>
+        <h2>Dashboard <em>Admin</em></h2>
+      </div>
+      <div class="admin-header-actions">
+        <button type="button" class="btn admin-btn-secondary" id="adminRefresh">Refresh</button>
+        <button type="button" class="btn" id="adminLogout">Keluar</button>
+      </div>
+    </header>
+
+    <div class="admin-stats" id="adminStats">
+      <div class="stat-card"><span>Total</span><strong id="statTotal">—</strong></div>
+      <div class="stat-card"><span>Menunggu</span><strong id="statMenunggu">—</strong></div>
+      <div class="stat-card"><span>Diproses</span><strong id="statDiproses">—</strong></div>
+      <div class="stat-card"><span>Selesai</span><strong id="statSelesai">—</strong></div>
+      <div class="stat-card"><span>Omzet (non-batal)</span><strong id="statRevenue">—</strong></div>
+    </div>
+
+    <div class="admin-toolbar">
+      <input type="search" id="adminSearch" placeholder="Cari nama / telepon / ID…">
+      <select id="adminStatusFilter">
+        <option value="">Semua status</option>
+        <option value="Menunggu">Menunggu</option>
+        <option value="Dikonfirmasi">Dikonfirmasi</option>
+        <option value="Diproses">Diproses</option>
+        <option value="Selesai">Selesai</option>
+        <option value="Dibatalkan">Dibatalkan</option>
+      </select>
+    </div>
+
+    <div class="admin-table-wrap">
+      <table class="admin-table" id="adminOrdersTable">
+        <thead>
+          <tr>
+            <th>Order ID</th>
+            <th>Waktu</th>
+            <th>Pelanggan</th>
+            <th>Telepon</th>
+            <th>Jenis</th>
+            <th>Total</th>
+            <th>Status</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="adminOrdersBody">
+          <tr><td colspan="8" class="admin-empty">Belum ada data. Pastikan Apps Script sudah terhubung.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="adminDetailModal" class="admin-modal" aria-hidden="true">
+  <div class="admin-card admin-card-wide" role="dialog" aria-modal="true">
+    <button type="button" class="admin-close" id="adminDetailClose" aria-label="Tutup">×</button>
+    <p class="eyebrow">DETAIL PESANAN</p>
+    <h2 id="adminDetailTitle">—</h2>
+    <form id="adminDetailForm" class="admin-detail-form">
+      <input type="hidden" name="orderId" id="detailOrderId">
+      <div class="admin-detail-grid">
+        <label>Nama
+          <input name="customerName" id="detailName" maxlength="80">
+        </label>
+        <label>Telepon
+          <input name="phone" id="detailPhone" maxlength="20">
+        </label>
+        <label>Jenis pesanan
+          <select name="orderType" id="detailType">
+            <option value="Takeaway">Takeaway</option>
+            <option value="Dine-in">Dine-in</option>
+            <option value="Delivery">Delivery</option>
+          </select>
+        </label>
+        <label>Status
+          <select name="status" id="detailStatus">
+            <option value="Menunggu">Menunggu</option>
+            <option value="Dikonfirmasi">Dikonfirmasi</option>
+            <option value="Diproses">Diproses</option>
+            <option value="Selesai">Selesai</option>
+            <option value="Dibatalkan">Dibatalkan</option>
+          </select>
+        </label>
+      </div>
+      <label>Catatan
+        <textarea name="notes" id="detailNotes" maxlength="500" rows="2"></textarea>
+      </label>
+      <div class="admin-items-list" id="detailItems"></div>
+      <p class="admin-detail-total">Total: <strong id="detailTotal">—</strong></p>
+      <div class="admin-detail-actions">
+        <button type="submit" class="btn">Simpan perubahan</button>
+        <button type="button" class="btn admin-btn-danger" id="adminDeleteOrder">Hapus pesanan</button>
+      </div>
+      <p id="adminDetailMsg" class="admin-msg" role="status"></p>
+    </form>
+  </div>
+</div>
+
+</body></html>
