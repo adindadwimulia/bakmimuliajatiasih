@@ -1,0 +1,11 @@
+# robots.txt for Bakmi Mulia Jatiasih
+# https://bakmimuliajatiasih.my.id/
+
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://bakmimuliajatiasih.my.id/sitemap.xml
+
+# Crawl-delay optional (most modern bots ignore)
+# Crawl-delay: 1
